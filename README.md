@@ -11,7 +11,7 @@ An example of the script handling correct/incorrect test cases
 Install the pip packages in requirements.txt. To freeze the python script, install PyInstaller and run pyinstaller main.py in the terminal
 
 ## Usage
-Either install all the pip packages and run main.py, or just run dist/main.exe (the executable produced by PyInstaller which doesn't require Python, only compatible with Windows 10). 
+Clone the repo and either install all the pip packages and run main.py, or just run dist/main.exe (the executable produced by PyInstaller which doesn't require Python, only compatible with Windows 10). 
 
 ## Potential Improvements
 1. Using authentication rather than just trusting that the user won't tamper with the user scores data (although I did make the problems read-only)
