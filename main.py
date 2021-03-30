@@ -1,6 +1,7 @@
 from threading import Thread, Event
 
 import shutil
+import subprocess
 from firebase import Firebase
 from colorama import init, Fore, Style
 import random
@@ -70,62 +71,78 @@ def main():
         timer = Timer(stop_flag, time_limit)
         timer.start()
 
-        # Check if the test cases the user enters match
-        test_cases_passed = 0
-        for i, test_case in enumerate(challenge["test-cases"]):
-            print("─" * shutil.get_terminal_size().columns)
-            while True:
+        print("─" * shutil.get_terminal_size().columns)
+        user_ans_name = input("Please enter the name of your answer file here: ")
+        user_ans_dir = input("Please enter the directory of your answer file here: ")
+        move_on = False
+        while not move_on:
+            print("Type anything to grade")
+            input_continue = input()
+            if input_continue == "exit":
+                exit_seq()
+            if move_on:
+                break
+
+            # Check if the test cases the user enters match
+            test_cases_passed = 0
+            for i, test_case in enumerate(challenge["test-cases"]):
+                print("─" * shutil.get_terminal_size().columns)
                 print(f"Test case {i + 1}:")
+
+                input_vals = []
                 for input_name, input_val in test_case["input"].items():
                     print(f"{input_name }: {input_val}")
-                user_answer = input()
+                    input_vals.append(str(input_val))
 
-                if user_answer == "exit":
-                    exit_seq()
-
-                # Move on if timer hit 0
-                if move_on:
+                try:
+                    user_answer = subprocess.run(['python', user_ans_name] + input_vals, capture_output=True, text=True, cwd=user_ans_dir).stdout.strip("\n")
+                except Exception as e:
+                    print(Fore.RED + "Error: " + str(e) + Fore.RESET)
+                    user_ans_name = input("Please enter the name of your answer file here: ")
+                    user_ans_dir = input("Please enter the directory of your answer file here: ")
                     break
 
                 answer = list(test_case["output"].values())[0]
-                print(user_answer)
-                print(answer)
+                print(f"User answer: {user_answer}")
+                print(f"Correct answer: {answer}")
                 try:
                     if ((type(answer) is float or type(answer) is int) and float(user_answer) == float(answer)) or \
                             str(user_answer) == str(answer):
 
                         print(Fore.GREEN + "Passed!" + Fore.RESET)
                         test_cases_passed += 1
-                        break
                     elif str(user_answer) == "exit":
                         exit_seq()
                     else:
                         print(Fore.RED + "Incorrect" + Fore.RESET)
+                        break
                 except:
                     print(Fore.RED + "Invalid input" + Fore.RESET)
-                    continue
-            if move_on:
-                break
-
-        # User correctly answered all the test cases
-        if test_cases_passed == len(challenge["test-cases"]):
-            points += time_limit
-            print(Fore.GREEN + "Solved the question!" + Fore.RESET)
-        # Stop the timer
-        stop_flag.set()
-
-        # Move onto the next question
-        if move_on:
-            move_on = False
-        elif difficulty != "hard":
-            print("Type \"yes\" when you're ready for the next question")
-            while True:
-                user_input = input()
-
-                if user_input == "exit":
-                    exit_seq()
-                elif user_input == "yes":
                     break
+
+            # User correctly answered all the test cases
+            if test_cases_passed == len(challenge["test-cases"]):
+                points += time_limit
+                print(Fore.GREEN + "Solved the question!" + Fore.RESET)
+
+                # Stop the timer
+                stop_flag.set()
+
+                # Move onto the next question
+                move_on = True
+
+                if difficulty != "hard":
+                    print("Type \"yes\" when you're ready for the next question")
+
+                    while True:
+                        user_input = input()
+
+                        if user_input == "exit":
+                            exit_seq()
+                        elif user_input == "yes":
+                            break
+            else:
+                pass
 
     # Update the user's score to firebase
     print(f"Thank you for taking the coding challenge! You got {points} points out of 35")
@@ -163,7 +180,15 @@ def parse_firebase_testcases(test_cases):
 
 
 def setup_firebase():
-    config = {}
+    config = {
+        "apiKey": "AIzaSyCAxiYl8U5SQTeZ9JyXx3iBP8Gye7g8ge0",
+        "authDomain": "code-challenge-4edda.firebaseapp.com",
+        "databaseURL": "https://code-challenge-4edda-default-rtdb.firebaseio.com",
+        "projectId": "code-challenge-4edda",
+        "storageBucket": "code-challenge-4edda.appspot.com",
+        "messagingSenderId": "719044340737",
+        "appId": "1:719044340737:web:52bb81a8c29b38b747e400"
+    }
 
     firebase = Firebase(config)
     return firebase
