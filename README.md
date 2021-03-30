@@ -1,5 +1,5 @@
 # Code Challenges
-This Python script guides the user through a CLI coding interview. It gives the user 1 easy, 1 medium, and 1 hard question (courtesy of Leetcode) randomly pulled from a Firebase Realtime Database with the questions and testcases. After the interview, the user gets a score out of 35 and uploads his/her score, name, and email to the database
+This Python script guides the user through a CLI coding interview. It gives the user 1 easy, 1 medium, and 1 hard question (courtesy of Leetcode) randomly pulled from a Firebase Realtime Database with the questions and testcases. After the interview, the user gets a score out of 35 and uploads his/her score, name, and email to the database. The expected input file must support taking the proper arguments and printing its answer to stdout. An example is provided in example.py
 
 ![](https://github.com/andrewpeng02/code-challenge/blob/main/README%20images/Screenshot%20app%201.png)
 
