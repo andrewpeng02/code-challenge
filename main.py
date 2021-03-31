@@ -1,7 +1,13 @@
 from threading import Thread, Event
 
+import smtplib, ssl
+from email.message import EmailMessage
+
 import shutil
+from getpass import getpass
 import subprocess
+from uuid import uuid4
+
 from firebase import Firebase
 from colorama import init, Fore, Style
 import random
@@ -13,6 +19,77 @@ def main():
     # Initialize colorama
     init()
 
+    print("─" * shutil.get_terminal_size().columns)
+    while True:
+        input_user = input(f"Enter {Fore.CYAN}admin{Fore.RESET} to enter admin mode or "
+                           f"{Fore.CYAN}interview{Fore.RESET} if you're interviewing: ")
+
+        if input_user == "admin":
+            admin()
+        elif input_user == "interview":
+            interview()
+        elif input_user == "exit":
+            exit()
+
+
+def admin():
+    while True:
+        password = input("Enter the admin password (default=admin): ")
+
+        if password == "admin":
+            break
+        elif password == "exit":
+            exit_seq()
+        else:
+            print(Fore.RED + "Incorrect password" + Fore.RESET)
+
+    # Get firebase ref
+    firebase = setup_firebase()
+    print("─" * shutil.get_terminal_size().columns)
+    print("Welcome to admin mode!")
+    print("If you're using gmail, allow less secure apps so it can login: https://myaccount.google.com/lesssecureapps")
+
+    user_email = input("Enter your email address: ")
+    user_password = getpass("Enter your email's password: ")
+
+    interviewee_email = input("Enter the email address of the interviewee to send the unique code: ")
+    interviewee_name = input("Enter the interviewee's name: ")
+    context = ssl.create_default_context()
+
+    # Generate unique code
+    code = str(uuid4())[:8]
+    try:
+        firebase.database().child(f'users/{interviewee_email.replace(".", " dot ")}/name').set(interviewee_name)
+        firebase.database().child(f'users/{interviewee_email.replace(".", " dot ")}/code').set(code)
+    except Exception as e:
+        print(Fore.RED + f"Failed to set firebase ref: {e}" + Fore.RESET)
+        exit_seq()
+
+    message = f"""\
+    Hello {interviewee_name}, 
+    
+    Here is the unique code that you must use to start the interview: {code}
+    
+    Thank you!"""
+    try:
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=context) as server:
+            server.login(user_email, user_password)
+
+            msg = EmailMessage()
+            msg.set_content(message)
+
+            msg['Subject'] = 'Your interview code attached!'
+            msg['From'] = user_email
+            msg['To'] = interviewee_email
+            server.send_message(msg)
+            server.quit()
+            print(Fore.GREEN + "Successfully sent the email!" + Fore.RESET)
+    except Exception as e:
+        print(Fore.RED + f"Failed to send the email: {e}" + Fore.RESET)
+    exit_seq()
+
+
+def interview():
     # Get firebase ref
     firebase = setup_firebase()
     print("─" * shutil.get_terminal_size().columns)
@@ -27,15 +104,19 @@ def main():
     print("─" * shutil.get_terminal_size().columns)
 
     # Get user info
-    print("Please enter your email address below:")
-    email_address = input().replace(".", " dot ")
+    email_address = input("Please enter your email address: ").replace(".", " dot ")
     if email_address == "exit":
         exit_seq()
 
-    print("Please enter your name below:")
-    name = input()
-    if name == "exit":
+    code = input("Please enter your unique code: ")
+    if code == "exit":
         exit_seq()
+
+    real_code = firebase.database().child(f'users/{email_address}/code').get().val()
+    if real_code is not None and code != firebase.database().child(f'users/{email_address}/code').get().val():
+        print(Fore.RED + "Invalid email or code" + Fore.RESET)
+        exit_seq()
+    firebase.database().child(f'users/{email_address}/code').remove()
 
     print("Thank you! Once you enter \"yes\", the interview will automatically start. Please make sure you\'re ready!")
     while True:
@@ -123,6 +204,7 @@ def main():
             # User correctly answered all the test cases
             if test_cases_passed == len(challenge["test-cases"]):
                 points += time_limit
+                firebase.database().child(f"users/{email_address}/score").set(points)
                 print(Fore.GREEN + "Solved the question!" + Fore.RESET)
 
                 # Stop the timer
@@ -146,7 +228,6 @@ def main():
 
     # Update the user's score to firebase
     print(f"Thank you for taking the coding challenge! You got {points} points out of 35")
-    firebase.database().child(f"users/{email_address}/name").set(name)
     firebase.database().child(f"users/{email_address}/score").set(points)
     exit_seq()
 
