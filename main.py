@@ -116,7 +116,15 @@ def interview():
     if real_code is not None and code != firebase.database().child(f'users/{email_address}/code').get().val():
         print(Fore.RED + "Invalid email or code" + Fore.RESET)
         exit_seq()
-    firebase.database().child(f'users/{email_address}/code').remove()
+    #firebase.database().child(f'users/{email_address}/code').remove()
+
+    while True:
+        lang = input(f"Enter either {Fore.CYAN}python{Fore.RESET}, {Fore.CYAN}javascript{Fore.RESET}, or "
+                     f"{Fore.CYAN}c++{Fore.RESET} for your desired language").lower()
+        if lang == "python" or lang == "javascript" or lang == "c++":
+            break
+        else:
+            print(Fore.RED + "Invalid language" + Fore.RESET)
 
     print("Thank you! Once you enter \"yes\", the interview will automatically start. Please make sure you\'re ready!")
     while True:
@@ -176,7 +184,7 @@ def interview():
                     input_vals.append(str(input_val))
 
                 try:
-                    user_answer = subprocess.run(['python', user_ans_name] + input_vals, capture_output=True, text=True, cwd=user_ans_dir).stdout.strip("\n")
+                    user_answer = run_script(lang, user_ans_name, user_ans_dir, input_vals)
                 except Exception as e:
                     print(Fore.RED + "Error: " + str(e) + Fore.RESET)
                     user_ans_name = input("Please enter the name of your answer file here: ")
@@ -185,7 +193,7 @@ def interview():
 
                 answer = list(test_case["output"].values())[0]
                 print(f"User answer: {user_answer}")
-                print(f"Correct answer: {answer}")
+                #print(f"Correct answer: {answer}")
                 try:
                     if ((type(answer) is float or type(answer) is int) and float(user_answer) == float(answer)) or \
                             str(user_answer) == str(answer):
@@ -230,6 +238,15 @@ def interview():
     print(f"Thank you for taking the coding challenge! You got {points} points out of 35")
     firebase.database().child(f"users/{email_address}/score").set(points)
     exit_seq()
+
+
+def run_script(lang, user_ans_name, user_ans_dir, input_vals):
+    if lang == "python":
+        return subprocess.run(['python', user_ans_name] + input_vals, capture_output=True,
+                              text=True, cwd=user_ans_dir).stdout.strip("\n")
+    elif lang == "javascript":
+        return subprocess.run(['node', user_ans_name] + input_vals, capture_output=True,
+                              text=True, cwd=user_ans_dir).stdout.strip("\n") # ["\"" + string + "\"" for string in input_vals]
 
 
 def get_random_challenge(difficulty, firebase):
