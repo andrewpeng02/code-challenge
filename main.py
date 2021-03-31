@@ -246,7 +246,11 @@ def run_script(lang, user_ans_name, user_ans_dir, input_vals):
                               text=True, cwd=user_ans_dir).stdout.strip("\n")
     elif lang == "javascript":
         return subprocess.run(['node', user_ans_name] + input_vals, capture_output=True,
-                              text=True, cwd=user_ans_dir).stdout.strip("\n") # ["\"" + string + "\"" for string in input_vals]
+                              text=True, cwd=user_ans_dir).stdout.strip("\n")
+    elif lang =="c++":
+        subprocess.run(f"g++ -o prg {user_ans_name}", cwd=user_ans_dir, shell=True)
+        return subprocess.run(['prg.exe'] + input_vals, capture_output=True,
+                              text=True, cwd=user_ans_dir, shell=True).stdout.strip("\n")
 
 
 def get_random_challenge(difficulty, firebase):
