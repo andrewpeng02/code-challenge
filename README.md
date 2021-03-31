@@ -14,7 +14,7 @@ An example of the script handling correct/incorrect test cases
 Install the pip packages in requirements.txt
 
 ## Usage
-Run ```pip install code-challenge``` and enter ```code-challenge``` in the terminal to begin the CLI program
+Run ```pip install code-challenge``` and enter ```code-challenge``` in the terminal to begin the CLI program. Make sure you have Python (for Python), NodeJS (for Javascript), or g++ (for C++) installed to compile your submissions.
 
 ## Potential Improvements
 1. Using authentication rather than just trusting that the user won't tamper with the user scores data (although I did make the problems read-only)
